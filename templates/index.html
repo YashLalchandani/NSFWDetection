@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NSFW Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .video-container {
+            margin-top: 20px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 0, 0, 0.7);
+            padding: 20px;
+            color: white;
+            font-size: 24px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+    </style>
+    <script>
+        function fetchResults() {
+            fetch('/detection_results')
+                .then(response => response.json())
+                .then(data => {
+                    const resultsContainer = document.getElementById('results');
+                    resultsContainer.innerHTML = '';
+                    let hasNSFW = false; // Flag to track NSFW content
+                    data.forEach(result => {
+                        const resultItem = document.createElement('div');
+                        resultItem.classList.add('result-item');
+                        resultItem.textContent = `${result.class}: ${result.score}/10`;
+                        resultsContainer.appendChild(resultItem);
+
+                        // Check if GENITALIA or BREAST are exposed
+                        if (result.class === 'GENITALIA_EXPOSED' || result.class === 'BREAST_EXPOSED') {
+                            hasNSFW = true;
+                        }
+                    });
+
+                    // Show popup if NSFW content is detected
+                    const popup = document.getElementById('popup');
+                    if (hasNSFW) {
+                        popup.style.display = 'block'; // Display the popup
+                    } else {
+                        popup.style.display = 'none'; // Hide the popup if no NSFW content
+                    }
+                });
+        }
+
+        setInterval(fetchResults, 1000);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-time NSFW Detection</h1>
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" width="800" />
+        </div>
+        <div class="results" id="results"></div>
+        <div class="popup" id="popup">Exposed NSFW parts detected!</div>
+    </div>
+</body>
+</html>
